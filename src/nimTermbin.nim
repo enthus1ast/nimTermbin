@@ -13,7 +13,8 @@ const url = "http://localhost:8000/"
 # const url = "http://localhost/"
 const deleteAfterDays = 30
 const checkTimeout: int = initDuration(minutes = 30).inMilliseconds.int
-let store  = getAppDir() / "termbins"
+const maxUploadBytes = 100_000
+let store = getAppDir() / "termbins"
 
 proc exists(slug: Slug): bool {.gcsafe.} =
   {.gcsafe.}:
@@ -33,22 +34,27 @@ proc genSlug(maxTries = 127, startLen = 1): Slug =
       len.inc 
     result = genRandStr(len)
     if not exists(result): break
-    
 
 proc handleClient(client: Socket, clientip: string) {.thread.} =
-  var msg = ""
-  var slug = ""
+  var bytes = 0 
+  var slug = genSlug()
+  {.gcsafe.}:
+    var fh = open(store / slug, fmWrite)
   while true:
     let buf = client.recv(1024)
+    bytes.inc buf.len
+    if bytes > maxUploadBytes:
+      echo fmt"[ERROR] payload to large! {clientIP}"
+      client.close()
+      return
     if buf.len == 0:
-      slug = genSlug()
       client.send("\n" & url & slug & "\n")
       client.close()
+      fh.close()
       break
-    msg.add buf
-  echo fmt"GOT {msg.len} bytes from {clientip}" & "\n"
-  {.gcsafe.}:
-    writeFile(store / slug, msg)
+    {.gcsafe.}:
+      fh.write(buf)
+  echo fmt"GOT {bytes} bytes from {clientip}" & "\n"
 
 proc deleteOld() {.thread.} =
   while true:
@@ -65,14 +71,13 @@ proc deleteOld() {.thread.} =
           removeFile(path)
     echo "============="
     sleep(checkTimeout)
-    
 
 proc main() =
   var deleteThread: Thread[void]
   createThread(deleteThread, deleteOld)
-  var client: Socket
-  var address = ""
   while true:
+    var client: Socket
+    var address = ""
     socket.acceptAddr(client, address)
     echo "Client connected from: ", address
     spawn handleClient(client, address)
