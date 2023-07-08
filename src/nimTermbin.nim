@@ -16,9 +16,12 @@ const checkTimeout: int = initDuration(minutes = 30).inMilliseconds.int
 const maxUploadBytes = 100_000
 let store = getAppDir() / "termbins"
 
-proc exists(slug: Slug): bool {.gcsafe.} =
+proc getStore(): string {.gcsafe.} =
   {.gcsafe.}:
-    return fileExists(store / slug)
+    return store
+
+proc exists(slug: Slug): bool {.gcsafe.} =
+  return fileExists(getStore() / slug)
 
 proc genRandStr(len: int): string  {.gcsafe.} =
   for _ in 0 ..< len:
@@ -38,13 +41,14 @@ proc genSlug(maxTries = 127, startLen = 1): Slug =
 proc handleClient(client: Socket, clientip: string) {.thread.} =
   var bytes = 0 
   var slug = genSlug()
-  {.gcsafe.}:
-    var fh = open(store / slug, fmWrite)
+  var fh = open(getStore() / slug, fmWrite)
   while true:
     let buf = client.recv(1024)
     bytes.inc buf.len
     if bytes > maxUploadBytes:
       echo fmt"[ERROR] payload to large! {clientIP}"
+      fh.close()
+      removeFile(getStore() / slug)
       client.close()
       return
     if buf.len == 0:
@@ -61,14 +65,13 @@ proc deleteOld() {.thread.} =
     echo "============="
     echo "DELETE OLD:"
     var curTime = getTime()
-    {.gcsafe.}:
-      for path in walkFiles(store / "*"):
-        var fileTime = getCreationTime(path)
-        var age = curTime - fileTime
-        # echo path, " ", curTime, " ", fileTime, "  age:", age, "in days: ", age.inDays()
-        if age.inMinutes() >= deleteAfterDays:
-          echo "[DELETE]: ", path
-          removeFile(path)
+    for path in walkFiles(getStore() / "*"):
+      var fileTime = getCreationTime(path)
+      var age = curTime - fileTime
+      # echo path, " ", curTime, " ", fileTime, "  age:", age, "in days: ", age.inDays()
+      if age.inMinutes() >= deleteAfterDays:
+        echo "[DELETE]: ", path
+        removeFile(path)
     echo "============="
     sleep(checkTimeout)
 
