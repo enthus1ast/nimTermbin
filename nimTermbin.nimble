@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.3.0"
+version       = "0.4.0"
 author        = "David Krause (enthus1ast)"
 description   = "A termbin clone in Nim"
 license       = "MIT"
