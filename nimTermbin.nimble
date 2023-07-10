@@ -11,3 +11,7 @@ bin           = @["nimTermbin"]
 # Dependencies
 
 requires "nim >= 1.6.14"
+
+# for file mime snooping. Depends on libmagic-dev
+requires "magic"
+

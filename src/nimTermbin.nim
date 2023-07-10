@@ -1,20 +1,28 @@
 import strformat, std/net, threadpool, os, random, strutils, times
+import parsecfg, uri, config
+
 
 type 
   Slug = string
 
 randomize()
 
+
+
 let socket = newSocket()
-socket.bindAddr(Port(9999))
+socket.bindAddr(config().port)
 socket.listen()
 
-const url = "http://localhost:8000/"
+# const url = "http://localhost:8000/"
 # const url = "http://localhost/"
-const deleteAfterDays = 30
+# const deleteAfterDays = 30
 const checkTimeout: int = initDuration(minutes = 30).inMilliseconds.int
-const maxUploadBytes = 100_000
-let store = getAppDir() / "termbins"
+# const maxUploadBytes = 100_000_000
+let store =
+  if config().storeName.isAbsolute:
+    config().storeName
+  else:
+    getAppDir() / config().storeName
 
 proc getStore(): string {.gcsafe.} =
   {.gcsafe.}:
@@ -45,20 +53,27 @@ proc handleClient(client: Socket, clientip: string) {.thread.} =
   while true:
     let buf = client.recv(1024)
     bytes.inc buf.len
-    if bytes > maxUploadBytes:
+    if bytes > config().maxUploadBytes:
       echo fmt"[ERROR] payload to large! {clientIP}"
       fh.close()
       removeFile(getStore() / slug)
       client.close()
       return
-    if buf.len == 0:
-      client.send("\n" & url & slug & "\n")
-      client.close()
+    elif buf.len == 0 and bytes == 0:
+      # We do not store empty files
       fh.close()
+      removeFile(getStore() / slug)
+      client.close()
+      return
+    elif buf.len == 0:
+      fh.close()
+      client.send("\n" & $(config().url / slug) & "\n")
+      client.close()
       break
-    {.gcsafe.}:
-      fh.write(buf)
-  echo fmt"GOT {bytes} bytes from {clientip}" & "\n"
+    else:
+      {.gcsafe.}:
+        fh.write(buf)
+  echo fmt"GOT '{bytes}' bytes from '{clientip}' stored at '{slug}'" & "\n"
 
 proc deleteOld() {.thread.} =
   while true:
@@ -69,7 +84,7 @@ proc deleteOld() {.thread.} =
       var fileTime = getCreationTime(path)
       var age = curTime - fileTime
       # echo path, " ", curTime, " ", fileTime, "  age:", age, "in days: ", age.inDays()
-      if age.inMinutes() >= deleteAfterDays:
+      if age.inMinutes() >= config().deleteAfterDays:
         echo "[DELETE]: ", path
         removeFile(path)
     echo "============="
