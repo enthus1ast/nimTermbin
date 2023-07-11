@@ -1,5 +1,6 @@
 services:
   nimtermbin:
+    restart: unless-stopped
     build:
       dockerfile: Dockerfile
     ports:

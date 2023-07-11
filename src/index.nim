@@ -81,8 +81,14 @@ Hosting
 [nimTermbin is free software](https://github.com/enthus1ast/nimTermbin).
 You can host it yourself!
 
+Features
+--------
+
+
+
 Config
 ------
+
 
 ```
 # The tcp port we listen on
@@ -110,6 +116,19 @@ mimeSnooping = true
 # If the file is unknown use default extention
 mimeSnoopingDefaultExt = txt
 ```
+
+
+Docker
+======
+
+You can easily deploy nimTermbin using docker/docker compose.
+
+Just run:
+  ```
+  docker compose build
+  docker compose up
+  ```
+
 """
 
 
