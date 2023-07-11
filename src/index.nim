@@ -74,7 +74,7 @@ Please do not post any informations that may violate law (login/password lists, 
 Life span of single paste is  **{{config().deleteAfterDays}} day(s)**. 
 Older pastes are deleted.
 
-Max size of a single post should not exeed **{{config().maxUploadBytes.formatSize(prefix = bpColloquial)}}**.
+Max size of a single paste should not exeed **{{config().maxUploadBytes.formatSize(prefix = bpColloquial)}}**.
 
 Hosting
 ==========

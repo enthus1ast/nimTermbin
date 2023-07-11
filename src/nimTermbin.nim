@@ -88,7 +88,7 @@ proc deleteOld() {.thread.} =
     for path in walkFiles(getStore() / "*"):
       var fileTime = getCreationTime(path)
       var age = curTime - fileTime
-      if age.inMinutes() >= config().deleteAfterDays:
+      if age.inDays() >= config().deleteAfterDays:
         echo "[DELETE]: ", path
         removeFile(path)
     echo "============="
