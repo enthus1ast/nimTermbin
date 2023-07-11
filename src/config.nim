@@ -8,6 +8,8 @@ type
     deleteAfterDays*: Positive
     maxUploadBytes*: Positive
     storeName*: string
+    mimeSnooping*: bool
+    mimeSnoopingDefaultExt* : string
 
 proc loadConfig*(): Config =
   let configFile = loadConfig(getAppDir() / "nimTermbin.conf")
@@ -19,9 +21,11 @@ proc loadConfig*(): Config =
     deleteAfterDays: g("deleteAfterDays").parseInt(),
     maxUploadBytes: g("maxUploadBytes").parseInt(),
     storeName: g("storeName"),
+    mimeSnooping: g("mimeSnooping").parseBool(),
+    mimeSnoopingDefaultExt: g("mimeSnoopingDefaultExt").strip(),
   )
 
-let configObj = loadConfig()
+var configObj* = loadConfig()
 proc config*(): Config {.gcsafe.} =
   {.gcsafe.}:
     return configObj

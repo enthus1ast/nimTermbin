@@ -1,15 +1,21 @@
 import nimib
+from nimib / renders import useMdBackend
+
 import config, nimja
+import parsecfg
+from net import Port
 
-import net, parsecfg
-
-
-nbinit()
+when defined(mdOutput):
+  echo "using Markdown backend"
+  nbInitMd
+else:
+  nbInit
+nb.title = "nimTermbin"
 
 nbText: """
-  # nimTermbin
-  ## A terminal Pastebin
-  (clone of [termbin](https://termbin.com)'s Fiche in Nim)
+# nimTermbin
+## A terminal Pastebin
+(clone of [termbin](https://termbin.com)'s Fiche in [Nim](https://nim-lang.org)) 
 """
 
 
@@ -69,6 +75,50 @@ Life span of single paste is  **{{config().deleteAfterDays}} day(s)**.
 Older pastes are deleted.
 
 Max size of a single post should not exeed **{{config().maxUploadBytes.formatSize(prefix = bpColloquial)}}**.
+
+Hosting
+==========
+[nimTermbin is free software](https://github.com/enthus1ast/nimTermbin).
+You can host it yourself!
+
+Config
+------
+
+```
+# The tcp port we listen on
+port = 9999
+
+# The (base) URL that is returned on successful upload
+url = "http://localhost:8000/t/"
+
+# Old downloads are deleted periodically
+deleteAfterDays = 30
+
+# How large the upload can be at max,
+# if this is exceeded, the socket is closed.
+maxUploadBytes = 30_000
+
+
+# This is relative to the application,
+# or absolute
+storeName = "termbins"
+
+# Enable "mimeSnooping" it tries to guess the mimetype based on the bytestream
+# Then it renames the file based on the outcome.
+mimeSnooping = true
+
+# If the file is unknown use default extention
+mimeSnoopingDefaultExt = txt
+```
 """
 
-nbSave()
+
+
+
+
+
+when defined(mdOutput):
+  nb.filename = "../README.md"
+  nbSave
+else:
+  nbSave

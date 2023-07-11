@@ -1,13 +1,9 @@
 services:
   nimtermbin:
     build:
-      # context: webserver
       dockerfile: Dockerfile
-    # depends_on:
-    #   - application
     ports:
       - "9999:9999" 
       - "8000:80" 
-
     volumes:
       - ./termbins:/opt/termbins
